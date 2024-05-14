@@ -38,12 +38,12 @@ erDiagram
 user ||--o{ payment : "user.id=payment.user_id"
 account ||--o{ payment : "account.id=payment.account_id"
 user ||--|| account : "user.id = account.user_id"
-account ||--o{ withdraw : "account.id = withdraw.account_id"
+account ||--o{ transaction : "account.id = transaction.account_id"
 user ||--o{ accrual : "user.id = accrual.user_id"
 account ||--o{ accrual : "account.id=accrual.account_id"
-accrual ||--|o withdraw : "accrual.withdraw_id=withdraw.id"
-payment ||--|o withdraw : "payment.withdraw_id=withdraw.id"
-user ||--o{ withdraw : "user.id = withdraw.user_id"
+accrual ||--|o transaction : "accrual.transaction_id=transaction.id"
+payment ||--|o transaction : "payment.transaction_id=transaction.id"
+user ||--o{ transaction : "user.id = transaction.user_id"
 
 
 user {
@@ -55,14 +55,14 @@ user {
 account {
   uuid id PK
   uuid user_id FK,UK "Хозяин счёта"
-  decimal balance "Текущая сумма баллов на счету"
+  numeric balance "Текущая сумма баллов на счету"
 }
 
 accrual {
   uuid id PK
   uuid user_id FK
   uuid account_id FK
-  uuid withdraw_id FK
+  uuid transaction_id FK
   string order_number UK
   accrual_status status "NEW,PROCESSING,PROCESSED,INVALID"
   timestamp created_at
@@ -73,36 +73,36 @@ payment {
   uuid id PK
   uuid user_id FK
   uuid account_id FK
-  uuid withdraw_id FK
+  uuid transaction_id FK
   string order_number 
   payment_status status "NEW,PROCESSING,PROCESSED,INVALID"
   timestamp created_at
   timestamp status_changed_at
 }
 
-withdraw {
+transaction {
   uuid id PK
   uuid user_id FK ""
   uuid account_id FK ""
-  withdraw_action action "DEBIT,CREDIT"
-  decimal amount "Сумма операции"
-  withdraw_status status "NEW,PROCESSING,PROCESSED,INVALID"
+  transaction_direction direction "DEPOSIT,WITHDRAW"
+  numeric amount "Сумма операции"
+  transaction_status status "NEW,PROCESSING,PROCESSED,REJECTED"
   timestamp processed_at "Время окончания обработки"
 }
 ```
 
-Все денежные операции сосредоточены в таблицах счёта: `account` и переводов: `withdraw`. Денежные единицы хранятся в 
+Все денежные операции сосредоточены в таблицах счёта: `account` и переводов: `transaction`. Денежные единицы хранятся в 
 колонках с типом `decimal(20,2)`.
 
 Таблицы `payment` и `accrual` хранят контекст переводов. Платежи и пополнения.
 
-Информация о пользователе, хранится в таблице `user`. Все остальные таблицы ссылаются на `user` как на корень аггрегата,
-дабы в будущем иметь удобный ключ шардирования, если вдруг всдумается раскидывать схему на шарды.
+Информация о пользователе, хранится в таблице `user`. Все остальные таблицы ссылаются на `user` как на корень агрегата,
+дабы в будущем иметь удобный ключ шардирования, если вдруг понадобится раскидывать схему на шарды.
 
 
 ### Взаимодействие в системе
 
-Взаимодействия клиента с компонентами системы можно видеть на следующей диаграме.
+Взаимодействия клиента с компонентами системы можно видеть на следующей диаграмме.
 
 ```mermaid
 flowchart TD
@@ -126,6 +126,7 @@ flowchart TD
     accrual --> accrualExternal
 ```
 
+
 ### Взаимодействие со счетом
 
 Операции пополнения и снятия со счета похожи, и изображены на следующих диаграмах.
@@ -139,71 +140,30 @@ sequenceDiagram
     participant db
     * ->> order : Оплатить заказ со счета
     activate order
-      order ->> db: Создать запись в таблице payment
-      order ->> account: Создать операцию списания
+      critical transaction 
+        order ->> db: Создать запись в таблице payment
+        order ->> account: Создать операцию списания
+        activate account
+            account ->> db : Создать запись о списании в withdraw
+        deactivate account
+      end
     deactivate order
     activate account
-      account ->> db: BEGIN transaction
-      account ->> db: Перевести withdraw в статус PROCESSING<br/> с условием что он имел статус REGISTERED
-      alt changed 0 rows?
-        account ->> db: ROLLBACK
-        account ->> *: fail
-      else иначе
-          account ->> db: COMMIT
-      end
-      account ->> db: BEGIN
-      account ->> db: SELECT FOR UPDATE amount FROM account ...
-      alt if amount < X
-          account ->> db: Перевести withdraw в статус INVALID
-          account ->> db: COMMIT
-          account ->> *: invalid
-      else иначе
-          account ->> db: Уменьшить счёт ID на сумму X
-          account ->> db: Перевести withdraw в статус PROCESSED<br/>WHERE status=PROCESSING
-          alt changed 0 rows?
-            account ->> db: ROLLBACK
-            account ->> *: fail
-          else иначе
-            account ->> db: COMMIT
-            account ->> *: Success
-          end
+      critical transaction
+        account ->> db: Заблокировать счёт для списания
+        account ->> db: Проверить достаточность средств для списания
+        alt if amount < X
+          account ->> db: Списать с account
+          account ->> db: Перевести операцию списания в PROCESSED
+        else иначе
+          account ->> db: Перевести операцию списания в REJECTED
+        end
+        account ->> db: Разблокировать счёт
       end
     deactivate account
 ```
 
-```mermaid
-sequenceDiagram
-    title Пополнение
-    * ->> account : "Пополнить на X счёт ID"
-    account ->> db: UPDATE SET amount=amount+X WHERE ID
-    account ->> *: "Success"
-```
-
-### Абстрактная схема взаимодействия с системой
-```mermaid
-sequenceDiagram
-   actor client
-   client ->> api: "регистрация пользователя"
-   client ->> api: "регистрация заказа"
-   activate api
-      api ->> cashback: сверка с системой<br/>расчёта баллов
-   deactivate api
-   activate cashback
-   alt есть баллы?
-    cashback ->> account : начислить
-   end
-   deactivate cashback
-   client ->> api: списание баллов в счёт<br/>оплаты заказа
-   activate api
-      api ->> account: списать средства
-      activate account
-      alt есть баллы?
-      account ->> account: списать со счёта
-      account ->> withdraw: оставить запись в истории
-      end
-      deactivate account
-   deactivate api
-```
+Операция начисления на счёт обрабатывается аналогично
 
 ### Схема взаимодействия с системой начисления баллов
 
@@ -215,57 +175,15 @@ sequenceDiagram
         api ->> order: загрузка заказа<br/>в систему
         activate order
             order ->> order: Создать запись в статусе NEW
-            order ->> cashback: Поставить в очередь на получение баллов
-            activate cashback
-            cashback ->> queue: Создать PENDING запись в очереди
-            cashback ->> order: .
-            deactivate cashback
+            order ->> accrual: Поставить в очередь на получение баллов
+            activate accrual
+            accrual ->> db: Создать PENDING запись в очереди
+            accrual ->> order: .
+            deactivate accrual
             order ->> api: .
         deactivate order
         api ->> client: .
    deactivate api
-```
-
-```mermaid
-sequenceDiagram
-    title Общение с внешней системой accrual на предмет наличия начислений по заказу
-    activate cashback
-    loop
-        cashback ->> queue: Получаем PENDING задачу из очереди<br/>и переводим в статус PROCESSING
-        activate queue
-        queue ->> cashback: task
-        deactivate queue
-        cashback ->> order: получаем заказ
-        activate order
-            order ->> cashback: order
-        deactivate order
-        cashback ->> accrual: Послать запрос на получение сведений о начислении за заказ
-         activate accrual
-         accrual ->> cashback: ответ от accrual
-         deactivate accrual
-            alt status=200
-                alt status=PROCESSED
-                cashback ->> order: обновить статус заказа
-                cashback ->> account: начислить баллы на счёт
-                cashback ->> cashback: Убрать заказ из очереди
-                else status=INVALID
-                cashback ->> order: обновить статус заказа
-                cashback ->> cashback: Убрать заказ из очереди
-                else status=REGISTERED
-                cashback ->> order: обновить статус заказа
-                cashback ->> cashback: Отложить в конец очереди
-                else status=PROCESSING
-                cashback ->> cashback: Отложить в конец очереди
-                end
-            else status=204
-                cashback ->> cashback: Отложить в конец очереди
-            else status=429
-                cashback ->> cashback: Отложить в конец очереди<br/>и поставить воркеры в паузу на указанное время
-            else остальные статусы
-               cashback ->> cashback: Ретраить
-            end
-    end
-    deactivate cashback
 ```
 
 ### Обработка ответа от accrual
