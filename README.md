@@ -152,7 +152,7 @@ sequenceDiagram
       critical transaction
         account ->> db: Заблокировать счёт для списания
         account ->> db: Проверить достаточность средств для списания
-        alt if amount < X
+        alt if средств достаточно?
           account ->> db: Списать с account
           account ->> db: Перевести операцию списания в PROCESSED
         else иначе
