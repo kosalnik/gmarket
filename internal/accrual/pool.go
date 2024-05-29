@@ -2,22 +2,22 @@ package accrual
 
 import (
 	"context"
-	"math/big"
 
 	"github.com/kosalnik/gmarket/internal/config"
 	"github.com/kosalnik/gmarket/internal/infra/logger"
+	"github.com/kosalnik/gmarket/pkg/domain/entity"
 )
 
-type AccrualHandler func(ctx context.Context, orderNumber big.Int)
+type AccrualHandler func(ctx context.Context, orderNumber entity.OrderNumber)
 type Pool struct {
-	ch          chan big.Int
+	ch          chan entity.OrderNumber
 	handler     AccrualHandler
 	rateLimiter RateLimiter
 }
 
 func NewPool(ctx context.Context, cfg config.AccrualSystem, rateLimiter RateLimiter, hdl AccrualHandler) *Pool {
 	p := &Pool{
-		ch:          make(chan big.Int),
+		ch:          make(chan entity.OrderNumber),
 		rateLimiter: rateLimiter,
 		handler:     hdl,
 	}
@@ -28,7 +28,7 @@ func NewPool(ctx context.Context, cfg config.AccrualSystem, rateLimiter RateLimi
 	return p
 }
 
-func (p *Pool) Handle(orderID *big.Int) {
+func (p *Pool) Handle(orderID *entity.OrderNumber) {
 	p.ch <- *orderID
 }
 

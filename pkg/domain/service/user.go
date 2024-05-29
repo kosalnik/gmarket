@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/kosalnik/gmarket/pkg/domain"
 	"github.com/kosalnik/gmarket/pkg/domain/entity"
 )
@@ -17,9 +18,9 @@ type UserService struct {
 	hasher PasswordHasher
 }
 
-func NewUserService(userRepo domain.Repository, h PasswordHasher) (*UserService, error) {
+func NewUserService(repo domain.Repository, h PasswordHasher) (*UserService, error) {
 	return &UserService{
-		repo:   userRepo,
+		repo:   repo,
 		hasher: h,
 	}, nil
 }
@@ -38,4 +39,8 @@ func (s *UserService) FindByLoginAndPassword(ctx context.Context, login, passwor
 		return nil, err
 	}
 	return s.repo.FindUserByLoginAndPassword(ctx, login, pwdHash)
+}
+
+func (s *UserService) GetAccount(ctx context.Context, userID uuid.UUID) (*entity.Account, error) {
+	return s.repo.GetAccount(ctx, userID)
 }

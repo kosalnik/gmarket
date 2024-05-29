@@ -8,9 +8,9 @@ import (
 	"github.com/kosalnik/gmarket/internal/infra/logger"
 )
 
-type authMiddleware struct {
-	encoder TokenEncoder
-}
+//type authMiddleware struct {
+//	encoder TokenEncoder
+//}
 
 type TokenEncoder interface {
 	Decode(tokenString string) (*JwtClaims, error)
@@ -41,7 +41,7 @@ func AuthMiddleware(encoder TokenEncoder) func(next func(http.ResponseWriter, *h
 			}
 			token, err := encoder.Decode(tokenString)
 			if err != nil {
-				logger.Info("wrong jwt", err)
+				logger.Info("wrong jwt", "err", err)
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}

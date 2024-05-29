@@ -16,6 +16,7 @@ func NewLoginHandler(
 	authService auth.TokenEncoder,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		var loginRequest LoginRequest
 		body, err := io.ReadAll(r.Body)
 		if err != nil {

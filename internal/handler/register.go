@@ -24,7 +24,7 @@ func NewRegisterHandler(
 	return func(w http.ResponseWriter, req *http.Request) {
 		var loginRequest LoginRequest
 		body, err := io.ReadAll(req.Body)
-		logger.Debug("Handle RegisterUser", body)
+		logger.Debug("Handle RegisterUser", "body", body)
 		if err != nil {
 			http.Error(w, "Wrong request", http.StatusBadRequest)
 			return
@@ -33,10 +33,10 @@ func NewRegisterHandler(
 			http.Error(w, "Wrong request", http.StatusBadRequest)
 			return
 		}
-		logger.Debug("RegisterUser", loginRequest)
+		logger.Debug("RegisterUser", "body", loginRequest)
 		u, err := userService.Register(ctx, loginRequest.Login, loginRequest.Password)
 		if err != nil {
-			logger.Info("RegisterUser failed", err)
+			logger.Info("RegisterUser failed", "err", err)
 			http.Error(w, "Wrong request", http.StatusBadRequest)
 			return
 		}

@@ -2,13 +2,13 @@ package accrual
 
 import (
 	"context"
-	"math/big"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/kosalnik/gmarket/internal/accrual/mock"
 	"github.com/kosalnik/gmarket/internal/config"
+	"github.com/kosalnik/gmarket/pkg/domain/entity"
 )
 
 func TestPool_Worker(t *testing.T) {
@@ -22,12 +22,13 @@ func TestPool_Worker(t *testing.T) {
 		ctx,
 		config.AccrualSystem{Concurrence: 10},
 		rateLimiterMock,
-		func(ctx context.Context, orderNumber big.Int) {
+		func(ctx context.Context, orderNumber entity.OrderNumber) {
 
 		},
 	)
+	b := entity.OrderNumber("12345")
 	for i := 0; i < 10; i++ {
-		w.Handle(big.NewInt(12345))
+		w.Handle(&b)
 	}
 	<-time.After(time.Second)
 }

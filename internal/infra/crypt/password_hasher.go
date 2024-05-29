@@ -23,7 +23,7 @@ func (p PasswordHasher) Hash(pwd string) (string, error) {
 func (p PasswordHasher) IsEquals(pwd string, h string) bool {
 	n, err := p.Hash(pwd)
 	if err != nil {
-		logger.Info("Calculate password hash has been failed", err.Error())
+		logger.Info("Calculate password hash has been failed", "err", err)
 		return false
 	}
 	return n == h

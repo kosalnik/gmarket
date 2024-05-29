@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"math/big"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,40 +23,47 @@ func NewOrderService(repo domain.Repository, accrualSvc AccrualService) (*OrderS
 	}, nil
 }
 
-func (s *OrderService) RegisterOrder(ctx context.Context, userID uuid.UUID, orderNumber *big.Int) (*entity.Order, error) {
+func (s *OrderService) RegisterOrder(ctx context.Context, userID uuid.UUID, orderNumber *entity.OrderNumber) (*entity.Order, error) {
+	var err error
 	o, err := s.repo.RegisterOrder(ctx, userID, *orderNumber)
 	if err != nil {
 		return nil, err
 	}
-	go func() {
-		for i := 0; i < 5; i++ {
-			result, err := s.accrualService.RegisterOrder(ctx, *orderNumber)
-			if err != nil {
-				logger.Error("RegisterOrder accrualError", "err", err)
-				<-time.After(time.Second)
-				continue
+	for i := 0; i < 5; i++ {
+		var result *Result
+		result, err = s.accrualService.RegisterOrder(ctx, *orderNumber)
+		if err != nil {
+			if errors.Is(err, ErrNotRegistered) {
+				return o, s.repo.MarkOrderInvalid(ctx, *orderNumber)
 			}
-			logger.Info("RegisterOrder accrual response", "response", result)
-			switch result.Status {
-			case "REGISTERED":
-				if err = s.repo.MarkOrderProcessing(ctx, *orderNumber); err == nil {
-					return
-				}
-			case "INVALID":
-				if err = s.repo.MarkOrderInvalid(ctx, *orderNumber); err == nil {
-					return
-				}
-			case "PROCESSING":
-				return
-			case "PROCESSED":
-				if err = s.repo.MarkOrderProcessedAndDepositAccount(ctx, userID, *orderNumber, result.Amount); err == nil {
-					return
-				}
+			logger.Error("RegisterOrder accrualError", "err", err)
+			<-time.After(time.Second)
+			continue
+		}
+		logger.Info("RegisterOrder accrual response", "response", result)
+		switch result.Status {
+		case "REGISTERED":
+			if err = s.repo.MarkOrderProcessing(ctx, *orderNumber); err == nil {
+				return o, nil
 			}
-			if err != nil {
-				logger.Error("RegisterOrder result error", "err", err)
+		case "INVALID":
+			if err = s.repo.MarkOrderInvalid(ctx, *orderNumber); err == nil {
+				return o, nil
+			}
+		case "PROCESSING":
+			return o, nil
+		case "PROCESSED":
+			if err = s.repo.MarkOrderProcessedAndDepositAccount(ctx, userID, *orderNumber, result.Amount); err == nil {
+				return o, nil
 			}
 		}
-	}()
-	return o, nil
+		if err != nil {
+			logger.Error("RegisterOrder result error", "err", err)
+		}
+	}
+	return o, err
+}
+
+func (s *OrderService) GetOrders(ctx context.Context, userID uuid.UUID) ([]*entity.Order, error) {
+	return s.repo.GetOrders(ctx, userID)
 }

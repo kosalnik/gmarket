@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"math/big"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,7 +10,7 @@ import (
 type Order struct {
 	ID          uuid.UUID       `db:"id"`
 	UserID      uuid.UUID       `db:"user_id"`
-	OrderNumber big.Int         `db:"order_number"`
+	OrderNumber OrderNumber     `db:"order_number"`
 	Amount      decimal.Decimal `db:"amount"`
 	Status      OrderStatus     `db:"status"`
 	CreatedAt   time.Time       `db:"created_at"`

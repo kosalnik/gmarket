@@ -15,8 +15,8 @@ func (app *Application) GetRoutes(ctx context.Context) http.Handler {
 	m.HandleFunc("POST /api/user/register", handler.NewRegisterHandler(ctx, app.userService, app.authService))
 	m.HandleFunc("POST /api/user/login", handler.NewLoginHandler(ctx, app.userService, app.authService))
 	m.HandleFunc("POST /api/user/orders", authMw(handler.NewOrderCreateHandler(ctx, app.orderService)))
-	m.HandleFunc("GET /api/user/orders", authMw(handler.NewOrderGetHandler()))
-	m.HandleFunc("GET /api/user/balance", authMw(handler.NewBalanceHandler()))
+	m.HandleFunc("GET /api/user/orders", authMw(handler.NewOrderGetHandler(ctx, app.orderService)))
+	m.HandleFunc("GET /api/user/balance", authMw(handler.NewBalanceHandler(ctx, app.userService)))
 	m.HandleFunc("POST /api/user/balance/withdraw", authMw(handler.NewWithdrawHandler()))
 	m.HandleFunc("GET /api/user/withdrawals", authMw(handler.NewWithdrawalsHandler()))
 

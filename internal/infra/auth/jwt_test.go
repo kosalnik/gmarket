@@ -1,7 +1,6 @@
 package auth_test
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -25,7 +24,6 @@ func TestJwtEncoder_Encode(t *testing.T) {
 	got, err := e.Encode(id)
 	require.NoError(t, err)
 	require.NotEmpty(t, got)
-	fmt.Println(got)
 }
 
 func TestJwtEncoder_Decode(t *testing.T) {
