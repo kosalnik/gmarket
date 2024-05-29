@@ -35,15 +35,9 @@
 
 ```mermaid
 erDiagram
-user ||--o{ payment : "user.id=payment.user_id"
-account ||--o{ payment : "account.id=payment.account_id"
+user ||--o{ order : "user.id=payment.user_id"
 user ||--|| account : "user.id = account.user_id"
-account ||--o{ transaction : "account.id = transaction.account_id"
-user ||--o{ accrual : "user.id = accrual.user_id"
-account ||--o{ accrual : "account.id=accrual.account_id"
-accrual ||--|o transaction : "accrual.transaction_id=transaction.id"
-payment ||--|o transaction : "payment.transaction_id=transaction.id"
-user ||--o{ transaction : "user.id = transaction.user_id"
+user ||--o{ withdraw : "user.id = accrual.user_id"
 
 
 user {
@@ -53,48 +47,31 @@ user {
 }
 
 account {
-  uuid id PK
   uuid user_id FK,UK "Хозяин счёта"
   numeric balance "Текущая сумма баллов на счету"
 }
 
-accrual {
+order {
   uuid id PK
   uuid user_id FK
-  uuid account_id FK
-  uuid transaction_id FK
   string order_number UK
-  accrual_status status "NEW,PROCESSING,PROCESSED,INVALID"
+  numeric amount
+  order_status status "NEW,PROCESSING,PROCESSED,INVALID"
   timestamp created_at
-  timestamp status_changed_at
+  timestamp updated_at
 }
 
-payment {
+withdraw {
   uuid id PK
   uuid user_id FK
-  uuid account_id FK
-  uuid transaction_id FK
-  string order_number 
-  payment_status status "NEW,PROCESSING,PROCESSED,INVALID"
+  string order_number
+  numeric amount
   timestamp created_at
-  timestamp status_changed_at
-}
-
-transaction {
-  uuid id PK
-  uuid user_id FK ""
-  uuid account_id FK ""
-  transaction_direction direction "DEPOSIT,WITHDRAW"
-  numeric amount "Сумма операции"
-  transaction_status status "NEW,PROCESSING,PROCESSED,REJECTED"
-  timestamp processed_at "Время окончания обработки"
+  timestamp updated_at
 }
 ```
 
-Все денежные операции сосредоточены в таблицах счёта: `account` и переводов: `transaction`. Денежные единицы хранятся в 
-колонках с типом `decimal(20,2)`.
-
-Таблицы `payment` и `accrual` хранят контекст переводов. Платежи и пополнения.
+Денежные единицы хранятся в колонках с типом `decimal(20,2)`.
 
 Информация о пользователе, хранится в таблице `user`. Все остальные таблицы ссылаются на `user` как на корень агрегата,
 дабы в будущем иметь удобный ключ шардирования, если вдруг понадобится раскидывать схему на шарды.
