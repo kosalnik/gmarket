@@ -65,7 +65,6 @@ func (s *OrderService) RegisterOrder(ctx context.Context, userID uuid.UUID, orde
 				logger.Error("RegisterOrder result error", "err", err)
 			}
 		}
-		return
 	}()
 	if errors.Is(err, ErrNotRegistered) {
 		return o, s.repo.MarkOrderInvalid(ctx, *orderNumber)

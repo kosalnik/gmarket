@@ -19,4 +19,5 @@ type Repository interface {
 	GetAccount(ctx context.Context, userID uuid.UUID) (*entity.Account, error)
 	Withdraw(ctx context.Context, userID uuid.UUID, orderNumber entity.OrderNumber, sum decimal.Decimal) error
 	Withdrawals(ctx context.Context, userID uuid.UUID) ([]*entity.Withdraw, error)
+	GetSumWithdraw(ctx context.Context, userID uuid.UUID) (*decimal.Decimal, error)
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/kosalnik/gmarket/pkg/domain"
 	"github.com/kosalnik/gmarket/pkg/domain/entity"
+	"github.com/shopspring/decimal"
 )
 
 type PasswordHasher interface {
@@ -43,4 +44,8 @@ func (s *UserService) FindByLoginAndPassword(ctx context.Context, login, passwor
 
 func (s *UserService) GetAccount(ctx context.Context, userID uuid.UUID) (*entity.Account, error) {
 	return s.repo.GetAccount(ctx, userID)
+}
+
+func (s *UserService) GetSumWithdraw(ctx context.Context, userID uuid.UUID) (*decimal.Decimal, error) {
+	return s.repo.GetSumWithdraw(ctx, userID)
 }

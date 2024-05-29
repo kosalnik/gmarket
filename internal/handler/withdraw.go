@@ -45,6 +45,7 @@ func NewWithdrawHandler(ctx context.Context, orderService *service.OrderService)
 			logger.Debug("NewWithdrawHandler unmarshal error", "err", err)
 			http.Error(w, "500: fail unmarshal", http.StatusInternalServerError)
 		}
+		logger.Info("NewWithdrawHandler request", "req", req)
 
 		err = orderService.Withdraw(ctx, userID, entity.OrderNumber(req.Order), req.Sum)
 		if err == nil {
@@ -52,10 +53,12 @@ func NewWithdrawHandler(ctx context.Context, orderService *service.OrderService)
 			return
 		}
 		if errors.Is(err, service.ErrMoneyNotEnough) {
+			logger.Debug("NewWithdrawHandler low money")
 			http.Error(w, "402: money not enough", http.StatusPaymentRequired)
 			return
 		}
 		if errors.Is(err, service.ErrWrongOrderNumber) {
+			logger.Debug("NewWithdrawHandler wrong order number")
 			http.Error(w, "422: wrong order number", http.StatusUnprocessableEntity)
 			return
 		}

@@ -27,12 +27,19 @@ func NewBalanceHandler(ctx context.Context, userService *service.UserService) fu
 			http.Error(w, "500: internal error", http.StatusInternalServerError)
 			return
 		}
+		withdrawn, err := userService.GetSumWithdraw(ctx, userID)
+		if err != nil {
+			logger.Info("NewBalanceHandler: error", "err", err)
+			http.Error(w, "500: internal error", http.StatusInternalServerError)
+			return
+		}
+
 		ret := struct {
 			Current   float64 `json:"current"`
 			Withdrawn float64 `json:"withdrawn"`
 		}{
 			Current:   acc.Balance.InexactFloat64(),
-			Withdrawn: float64(0),
+			Withdrawn: withdrawn.InexactFloat64(),
 		}
 		resp, err := json.Marshal(ret)
 		if err != nil {

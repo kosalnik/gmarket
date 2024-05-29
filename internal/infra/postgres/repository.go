@@ -268,6 +268,22 @@ func (r *Repository) GetAccount(ctx context.Context, userID uuid.UUID) (*entity.
 	return &acc, nil
 }
 
+func (r *Repository) GetSumWithdraw(ctx context.Context, userID uuid.UUID) (*decimal.Decimal, error) {
+	var sum float64
+	res := r.db.QueryRowContext(
+		ctx,
+		`SELECT COALESCE(sum(amount), 0) FROM "withdraw" WHERE user_id = $1`,
+		userID,
+	)
+
+	if err := res.Scan(&sum); err != nil {
+		logger.Info("GetAccount failed", "err", err)
+		return nil, err
+	}
+	ret := decimal.NewFromFloat(sum)
+	return &ret, nil
+}
+
 func (r *Repository) Withdraw(ctx context.Context, userID uuid.UUID, orderNumber entity.OrderNumber, sum decimal.Decimal) error {
 	return r.inTransaction(ctx, func(ctx context.Context, tx *sql.Tx) error {
 		acc := entity.Account{UserID: userID}
@@ -286,8 +302,8 @@ func (r *Repository) Withdraw(ctx context.Context, userID uuid.UUID, orderNumber
 		}
 		_, err := tx.ExecContext(
 			ctx,
-			`UPDATE "account" SET balance = $1 WHERE user_id = $2`,
-			acc.Balance, userID,
+			`UPDATE "account" SET balance = balance - $1 WHERE user_id = $2`,
+			sum, userID,
 		)
 		if err != nil {
 			return err
