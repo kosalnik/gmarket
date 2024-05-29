@@ -35,37 +35,40 @@ func (s *OrderService) RegisterOrder(ctx context.Context, userID uuid.UUID, orde
 	if err != nil {
 		return nil, err
 	}
-	for i := 0; i < 5; i++ {
-		var result *Result
-		result, err = s.accrualService.RegisterOrder(ctx, *orderNumber)
-		if err != nil {
-			if errors.Is(err, ErrNotRegistered) {
-				return o, s.repo.MarkOrderInvalid(ctx, *orderNumber)
+	go func() {
+		for i := 0; i < 5; i++ {
+			var result *Result
+			result, err = s.accrualService.RegisterOrder(ctx, *orderNumber)
+			if err != nil {
+				logger.Error("RegisterOrder accrualError", "err", err)
+				<-time.After(time.Second)
+				continue
 			}
-			logger.Error("RegisterOrder accrualError", "err", err)
-			<-time.After(time.Second)
-			continue
+			logger.Info("RegisterOrder accrual response", "response", result)
+			switch result.Status {
+			case "REGISTERED":
+				if err = s.repo.MarkOrderProcessing(ctx, *orderNumber); err == nil {
+					return
+				}
+			case "INVALID":
+				if err = s.repo.MarkOrderInvalid(ctx, *orderNumber); err == nil {
+					return
+				}
+			case "PROCESSING":
+				return
+			case "PROCESSED":
+				if err = s.repo.MarkOrderProcessedAndDepositAccount(ctx, userID, *orderNumber, result.Amount); err == nil {
+					return
+				}
+			}
+			if err != nil {
+				logger.Error("RegisterOrder result error", "err", err)
+			}
 		}
-		logger.Info("RegisterOrder accrual response", "response", result)
-		switch result.Status {
-		case "REGISTERED":
-			if err = s.repo.MarkOrderProcessing(ctx, *orderNumber); err == nil {
-				return o, nil
-			}
-		case "INVALID":
-			if err = s.repo.MarkOrderInvalid(ctx, *orderNumber); err == nil {
-				return o, nil
-			}
-		case "PROCESSING":
-			return o, nil
-		case "PROCESSED":
-			if err = s.repo.MarkOrderProcessedAndDepositAccount(ctx, userID, *orderNumber, result.Amount); err == nil {
-				return o, nil
-			}
-		}
-		if err != nil {
-			logger.Error("RegisterOrder result error", "err", err)
-		}
+		return
+	}()
+	if errors.Is(err, ErrNotRegistered) {
+		return o, s.repo.MarkOrderInvalid(ctx, *orderNumber)
 	}
 	return o, err
 }
