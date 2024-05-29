@@ -17,4 +17,6 @@ type Repository interface {
 	MarkOrderProcessedAndDepositAccount(ctx context.Context, userID uuid.UUID, orderNumber entity.OrderNumber, amount decimal.Decimal) error
 	GetOrders(ctx context.Context, userID uuid.UUID) ([]*entity.Order, error)
 	GetAccount(ctx context.Context, userID uuid.UUID) (*entity.Account, error)
+	Withdraw(ctx context.Context, userID uuid.UUID, orderNumber entity.OrderNumber, sum decimal.Decimal) error
+	Withdrawals(ctx context.Context, userID uuid.UUID) ([]*entity.Withdraw, error)
 }

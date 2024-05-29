@@ -9,12 +9,18 @@ import (
 	"github.com/kosalnik/gmarket/internal/infra/logger"
 	"github.com/kosalnik/gmarket/pkg/domain"
 	"github.com/kosalnik/gmarket/pkg/domain/entity"
+	"github.com/shopspring/decimal"
 )
 
 type OrderService struct {
 	repo           domain.Repository
 	accrualService AccrualService
 }
+
+var (
+	ErrMoneyNotEnough   = errors.New("money are not enough")
+	ErrWrongOrderNumber = errors.New("money are not enough")
+)
 
 func NewOrderService(repo domain.Repository, accrualSvc AccrualService) (*OrderService, error) {
 	return &OrderService{
@@ -66,4 +72,12 @@ func (s *OrderService) RegisterOrder(ctx context.Context, userID uuid.UUID, orde
 
 func (s *OrderService) GetOrders(ctx context.Context, userID uuid.UUID) ([]*entity.Order, error) {
 	return s.repo.GetOrders(ctx, userID)
+}
+
+func (s *OrderService) Withdraw(ctx context.Context, userID uuid.UUID, orderNumber entity.OrderNumber, sum decimal.Decimal) error {
+	return s.repo.Withdraw(ctx, userID, orderNumber, sum)
+}
+
+func (s *OrderService) Withdrawals(ctx context.Context, userID uuid.UUID) ([]*entity.Withdraw, error) {
+	return s.repo.Withdrawals(ctx, userID)
 }

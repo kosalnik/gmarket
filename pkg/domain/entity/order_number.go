@@ -14,6 +14,31 @@ func (b *OrderNumber) FromBytes(d []byte) (*OrderNumber, error) {
 	return &s, nil
 }
 
+func (b *OrderNumber) Valid() bool {
+	if b == nil || len(*b) == 0 {
+		return false
+	}
+	chars := []uint8(*b)
+	sum := 0
+	size := len(chars)
+	for i := range *b {
+		c := chars[size-i-1]
+		if c < '0' || c > '9' {
+			return false
+		}
+		if i%2 == 0 {
+			sum += int(c) - 48
+		} else {
+			t := (int(c) - 48) * 2
+			if t > 9 {
+				t -= 9
+			}
+			sum += t
+		}
+	}
+	return sum%10 == 0
+}
+
 //func (b *OrderNumber) FromBytes(s []byte) (*OrderNumber, error) {
 //	t := new(OrderNumber)
 //	err := t.Scan(s)

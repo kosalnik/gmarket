@@ -17,6 +17,12 @@ import (
 func NewOrderCreateHandler(ctx context.Context, orderService *service.OrderService) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		userID := auth.UserIDFromContext(r.Context())
+		if userID == uuid.Nil {
+			logger.Info("NewOrderCreateHandler: unauthorized")
+			http.Error(w, "401: unauthorized", http.StatusUnauthorized)
+			return
+		}
 		defer func() {
 			if err := r.Body.Close(); err != nil {
 				logger.Warn("NewOrderCreateHandler: unable to close body")
@@ -28,15 +34,9 @@ func NewOrderCreateHandler(ctx context.Context, orderService *service.OrderServi
 			return
 		}
 		orderNumber, err := new(entity.OrderNumber).FromBytes(b)
-		if err != nil {
-			logger.Info("NewOrderCreateHandler: fail convert order number")
-			http.Error(w, "400: wrong number", http.StatusBadRequest)
-			return
-		}
-		userID := auth.UserIDFromContext(r.Context())
-		if userID == uuid.Nil {
-			logger.Info("NewOrderCreateHandler: unauthorized")
-			http.Error(w, "401: unauthorized", http.StatusUnauthorized)
+		if err != nil || !orderNumber.Valid() {
+			logger.Info("NewOrderCreateHandler: wrong number", "err", err)
+			http.Error(w, "422: wrong number", http.StatusUnprocessableEntity)
 			return
 		}
 		_, err = orderService.RegisterOrder(ctx, userID, orderNumber)

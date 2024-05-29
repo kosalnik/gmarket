@@ -11,6 +11,7 @@ import (
 	"github.com/kosalnik/gmarket/internal/infra/logger"
 	"github.com/kosalnik/gmarket/pkg/domain"
 	"github.com/kosalnik/gmarket/pkg/domain/entity"
+	"github.com/kosalnik/gmarket/pkg/domain/service"
 	"github.com/shopspring/decimal"
 )
 
@@ -265,4 +266,90 @@ func (r *Repository) GetAccount(ctx context.Context, userID uuid.UUID) (*entity.
 		return nil, err
 	}
 	return &acc, nil
+}
+
+func (r *Repository) Withdraw(ctx context.Context, userID uuid.UUID, orderNumber entity.OrderNumber, sum decimal.Decimal) error {
+	return r.inTransaction(ctx, func(ctx context.Context, tx *sql.Tx) error {
+		acc := entity.Account{UserID: userID}
+		res := tx.QueryRowContext(
+			ctx,
+			`SELECT balance FROM "account" WHERE user_id = $1 FOR UPDATE`,
+			acc.UserID,
+		)
+		if err := res.Scan(&acc.Balance); err != nil {
+			logger.Info("Withdraw failed", "err", err)
+			return err
+		}
+		acc.Balance = acc.Balance.Sub(sum)
+		if acc.Balance.LessThan(decimal.Zero) {
+			return service.ErrMoneyNotEnough
+		}
+		_, err := tx.ExecContext(
+			ctx,
+			`UPDATE "account" SET balance = $1 WHERE user_id = $2`,
+			acc.Balance, userID,
+		)
+		if err != nil {
+			return err
+		}
+		return r.createWithdraw(ctx, tx, userID, orderNumber, sum)
+	})
+}
+
+func (r *Repository) createWithdraw(ctx context.Context, tx *sql.Tx, userID uuid.UUID, orderNumber entity.OrderNumber, sum decimal.Decimal) error {
+	id, err := uuid.NewV6()
+	if err != nil {
+		return err
+	}
+	now := time.Now()
+	a := &entity.Withdraw{
+		ID:          id,
+		UserID:      userID,
+		OrderNumber: orderNumber,
+		Amount:      sum,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+	_, err = tx.ExecContext(
+		ctx,
+		`INSERT INTO "withdraw" (id, user_id, order_number, amount, created_at, updated_at) 
+			VALUES ($1, $2, $3, $4, $5, $6)`,
+		a.ID, a.UserID, a.OrderNumber.String(), a.Amount, a.CreatedAt, a.UpdatedAt,
+	)
+	if err != nil {
+		logger.Debug("Repository.createWithdraw error", "withdraw", a, "err", err)
+		return err
+	}
+	logger.Debug("Repository.createWithdraw success", "withdraw", a)
+	return nil
+}
+
+func (r *Repository) Withdrawals(ctx context.Context, userID uuid.UUID) ([]*entity.Withdraw, error) {
+	q := `SELECT id, user_id, order_number, amount, created_at, updated_at FROM "withdraw" WHERE user_id = $1`
+	rows, err := r.db.QueryContext(ctx, q, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			logger.Error("GetWithdrawals fail to close rows", "err", err)
+		}
+	}()
+	var ret []*entity.Withdraw
+	for rows.Next() {
+		var o entity.Withdraw
+		err = rows.Scan(&o.ID, &o.UserID, &o.OrderNumber, &o.Amount, &o.CreatedAt, &o.UpdatedAt)
+		if err != nil {
+			break
+		}
+		ret = append(ret, &o)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return ret, nil
 }
