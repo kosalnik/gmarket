@@ -28,7 +28,6 @@ type Application struct {
 	authService    auth.TokenEncoder
 	orderService   *service.OrderService
 	accrualService service.AccrualService
-	accountService *service.AccountService
 }
 
 func New(cfg *config.Config) *Application {
@@ -60,9 +59,6 @@ func (app *Application) initServices() {
 		panic(err)
 	}
 	if app.userService, err = service.NewUserService(app.repo, app.passwordHasher); err != nil {
-		panic(err)
-	}
-	if app.accountService, err = service.NewAccountService(); err != nil {
 		panic(err)
 	}
 	if app.accrualService, err = accrual.NewAccrual(app.cfg.AccrualSystem); err != nil {

@@ -1,4 +1,4 @@
-package accrual
+package ratelimiter
 
 import (
 	"testing"

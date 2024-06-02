@@ -18,7 +18,6 @@ import (
 type Accrual struct {
 	cfg    config.AccrualSystem
 	client *http.Client
-	pool   *Pool
 }
 
 func NewAccrual(cfg config.AccrualSystem) (*Accrual, error) {
