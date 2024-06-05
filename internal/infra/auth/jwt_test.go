@@ -7,9 +7,10 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
+
 	"github.com/kosalnik/gmarket/internal/config"
 	"github.com/kosalnik/gmarket/internal/infra/auth"
-	"github.com/stretchr/testify/require"
 )
 
 func TestJwtEncoder_Encode(t *testing.T) {

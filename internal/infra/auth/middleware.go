@@ -5,12 +5,9 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+
 	"github.com/kosalnik/gmarket/internal/infra/logger"
 )
-
-//type authMiddleware struct {
-//	encoder TokenEncoder
-//}
 
 type TokenEncoder interface {
 	Decode(tokenString string) (*JwtClaims, error)

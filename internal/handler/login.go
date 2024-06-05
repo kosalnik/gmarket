@@ -7,12 +7,12 @@ import (
 	"net/http"
 
 	"github.com/kosalnik/gmarket/internal/infra/auth"
-	"github.com/kosalnik/gmarket/pkg/domain/service"
+	"github.com/kosalnik/gmarket/pkg/domain"
 )
 
 func NewLoginHandler(
 	ctx context.Context,
-	userService *service.UserService,
+	userService domain.UserService,
 	authService auth.TokenEncoder,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {

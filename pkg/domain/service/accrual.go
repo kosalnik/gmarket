@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kosalnik/gmarket/pkg/domain/entity"
 	"github.com/shopspring/decimal"
+
+	"github.com/kosalnik/gmarket/pkg/domain/entity"
 )
 
 var (

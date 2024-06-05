@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
+
 	"github.com/kosalnik/gmarket/internal/infra/logger"
 	"github.com/kosalnik/gmarket/pkg/domain"
 	"github.com/kosalnik/gmarket/pkg/domain/entity"
-	"github.com/shopspring/decimal"
 )
 
 type OrderService struct {

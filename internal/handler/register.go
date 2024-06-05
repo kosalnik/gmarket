@@ -8,7 +8,7 @@ import (
 
 	"github.com/kosalnik/gmarket/internal/infra/auth"
 	"github.com/kosalnik/gmarket/internal/infra/logger"
-	"github.com/kosalnik/gmarket/pkg/domain/service"
+	"github.com/kosalnik/gmarket/pkg/domain"
 )
 
 type LoginRequest struct {
@@ -18,7 +18,7 @@ type LoginRequest struct {
 
 func NewRegisterHandler(
 	ctx context.Context,
-	userService *service.UserService,
+	userService domain.UserService,
 	authService auth.TokenEncoder,
 ) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {

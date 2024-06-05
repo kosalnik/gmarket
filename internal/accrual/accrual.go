@@ -8,11 +8,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/shopspring/decimal"
+
 	"github.com/kosalnik/gmarket/internal/config"
 	"github.com/kosalnik/gmarket/internal/infra/logger"
 	"github.com/kosalnik/gmarket/pkg/domain/entity"
 	"github.com/kosalnik/gmarket/pkg/domain/service"
-	"github.com/shopspring/decimal"
 )
 
 type Accrual struct {

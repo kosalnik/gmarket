@@ -4,8 +4,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/kosalnik/gmarket/pkg/domain/entity"
 	"github.com/shopspring/decimal"
+
+	"github.com/kosalnik/gmarket/pkg/domain/entity"
 )
 
 type Repository interface {

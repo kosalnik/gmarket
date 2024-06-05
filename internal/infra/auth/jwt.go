@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+
 	"github.com/kosalnik/gmarket/internal/config"
 	"github.com/kosalnik/gmarket/internal/infra/logger"
 )

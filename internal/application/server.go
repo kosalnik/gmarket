@@ -6,14 +6,14 @@ import (
 	"net/http"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/kosalnik/gmarket/internal/accrual"
-	"github.com/kosalnik/gmarket/pkg/domain"
 
+	"github.com/kosalnik/gmarket/internal/accrual"
 	"github.com/kosalnik/gmarket/internal/config"
 	"github.com/kosalnik/gmarket/internal/infra/auth"
 	"github.com/kosalnik/gmarket/internal/infra/crypt"
 	"github.com/kosalnik/gmarket/internal/infra/logger"
 	"github.com/kosalnik/gmarket/internal/infra/postgres"
+	"github.com/kosalnik/gmarket/pkg/domain"
 	"github.com/kosalnik/gmarket/pkg/domain/service"
 )
 
@@ -24,9 +24,9 @@ type Application struct {
 	repo domain.Repository
 
 	passwordHasher service.PasswordHasher
-	userService    *service.UserService
+	userService    domain.UserService
 	authService    auth.TokenEncoder
-	orderService   *service.OrderService
+	orderService   domain.OrderService
 	accrualService service.AccrualService
 }
 

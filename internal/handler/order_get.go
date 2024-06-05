@@ -8,12 +8,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kosalnik/gmarket/pkg/domain"
+
 	"github.com/kosalnik/gmarket/internal/infra/auth"
 	"github.com/kosalnik/gmarket/internal/infra/logger"
-	"github.com/kosalnik/gmarket/pkg/domain/service"
 )
 
-func NewOrderGetHandler(ctx context.Context, orderService *service.OrderService) func(http.ResponseWriter, *http.Request) {
+func NewOrderGetHandler(ctx context.Context, orderService domain.OrderService) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		userID := auth.UserIDFromContext(r.Context())
