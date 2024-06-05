@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"embed"
 
-	"github.com/kosalnik/gmarket/internal/infra/logger"
 	"github.com/pressly/goose/v3"
+
+	"github.com/kosalnik/gmarket/internal/infra/logger"
 )
 
 //go:embed migrations/*.sql

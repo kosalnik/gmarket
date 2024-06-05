@@ -9,7 +9,7 @@ import (
 	"github.com/kosalnik/gmarket/internal/config"
 )
 
-var loggerInstance *slog.Logger
+var loggerInstance = defaultLogger()
 
 var levelMap = map[string]slog.Level{
 	"DEBUG": slog.LevelDebug,
@@ -43,4 +43,10 @@ func Info(msg string, args ...any) {
 
 func Error(msg string, args ...any) {
 	loggerInstance.Error(msg, args...)
+}
+
+func defaultLogger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
 }
