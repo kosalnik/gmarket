@@ -46,10 +46,11 @@ func TestNewConfig(t *testing.T) {
 			cfg := NewConfig()
 			if cfg == nil {
 				t.Errorf(`Want Config instance, got nil`)
+			} else { // Статанализатор ругается, если следующие ассерты вне if вставить
+				assert.Equal(t, "asd", cfg.Database.URI)
+				assert.Equal(t, "qwe", cfg.Server.Address)
+				assert.Equal(t, "zxc", cfg.AccrualSystem.Address)
 			}
-			assert.Equal(t, "asd", cfg.Database.URI)
-			assert.Equal(t, "qwe", cfg.Server.Address)
-			assert.Equal(t, "zxc", cfg.AccrualSystem.Address)
 		})
 	})
 }
