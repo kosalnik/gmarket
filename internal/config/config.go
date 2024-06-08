@@ -78,6 +78,8 @@ func (e *EnvKeyReplacer) Replace(key string) string {
 		return "ACCRUAL_SYSTEM_ADDRESS"
 	case "SERVER.ADDRESS":
 		return "RUN_ADDRESS"
+	case "DATABASE.URI":
+		return "DATABASE_URI"
 	}
 	return strings.Replace(key, ".", "_", -1)
 }
