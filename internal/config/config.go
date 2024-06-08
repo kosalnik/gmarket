@@ -70,7 +70,13 @@ func NewConfig() *Config {
 	return &cfg
 }
 
+var flagsInitialized bool
+
 func parseFlags(v *viper.Viper) {
+	if flagsInitialized {
+		return
+	}
+	flagsInitialized = true
 	flag.String("a", ":8080", "server endpoint (ip:port)")
 	flag.String("r", "", "Accrual system address")
 	flag.String("d", "", "Database DSN")
