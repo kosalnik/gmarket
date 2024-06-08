@@ -49,8 +49,8 @@ type Logger struct {
 }
 
 func NewConfig() *Config {
-	v := viper.New()
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v := viper.NewWithOptions(viper.EnvKeyReplacer(&EnvKeyReplacer{}))
+	//v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.SetConfigType("yaml")
 	v.AutomaticEnv()
 	defaultCfg, err := configDir.Open(cfgDefaultPath)
@@ -66,4 +66,18 @@ func NewConfig() *Config {
 	}
 
 	return &cfg
+}
+
+type EnvKeyReplacer struct{}
+
+var _ viper.StringReplacer = &EnvKeyReplacer{}
+
+func (e *EnvKeyReplacer) Replace(key string) string {
+	switch key {
+	case "ACCRUALSYSTEM.ADDRESS":
+		return "ACCRUAL_SYSTEM_ADDRESS"
+	case "SERVER.ADDRESS":
+		return "RUN_ADDRESS"
+	}
+	return strings.Replace(key, ".", "_", -1)
 }

@@ -111,7 +111,7 @@ func (s *FunctionalSuite) CleanupFixtures(fixtures DBDataset) error {
 	return nil
 }
 
-func (s *FunctionalSuite) RequireDbContains(fixtures DBDataset) {
+func (s *FunctionalSuite) RequireDBContains(fixtures DBDataset) {
 	tx := s.db
 	for _, d := range fixtures {
 		tbl := d.table
