@@ -65,4 +65,4 @@ jobs:
 
       - name: InternalTests
         run: |
-          DATABASE_URI==postgresql://postgres:postgres@postgres/praktikum?sslmode=disable go test ./... -cover
+          DATABASE_URI=postgresql://postgres:postgres@postgres/praktikum?sslmode=disable go test ./... -cover
