@@ -2,10 +2,12 @@ package config
 
 import (
 	"embed"
+	"flag"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -50,7 +52,7 @@ type Logger struct {
 
 func NewConfig() *Config {
 	v := viper.NewWithOptions(viper.EnvKeyReplacer(&EnvKeyReplacer{}))
-	//v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	parseFlags(v)
 	v.SetConfigType("yaml")
 	v.AutomaticEnv()
 	defaultCfg, err := configDir.Open(cfgDefaultPath)
@@ -66,6 +68,23 @@ func NewConfig() *Config {
 	}
 
 	return &cfg
+}
+
+func parseFlags(v *viper.Viper) {
+	flag.String("a", ":8080", "server endpoint (ip:port)")
+	flag.String("r", "", "Accrual system address")
+	flag.String("d", "", "Database DSN")
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.Parse()
+	if err := v.BindPFlag("Server.Address", pflag.Lookup("a")); err != nil {
+		panic(err)
+	}
+	if err := v.BindPFlag("AccrualSystem.Address", pflag.Lookup("r")); err != nil {
+		panic(err)
+	}
+	if err := v.BindPFlag("Database.URI", pflag.Lookup("d")); err != nil {
+		panic(err)
+	}
 }
 
 type EnvKeyReplacer struct{}
