@@ -62,3 +62,13 @@ jobs:
             -accrual-host=localhost \
             -accrual-port=$(random unused-port) \
             -accrual-database-uri="postgresql://postgres:postgres@postgres/praktikum?sslmode=disable"
+
+      - name: InternalTests
+        run: |
+          DATABASE_URI=postgresql://postgres:postgres@postgres/praktikum?sslmode=disable go test ./... -cover -race -coverprofile=coverage.out -covermode=atomic
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: kosalnik/gmarket

@@ -35,26 +35,23 @@ func New(cfg *config.Config) *Application {
 }
 
 func (app *Application) Run(ctx context.Context) (err error) {
-	app.db, err = postgres.NewDB(ctx, app.cfg.Database)
-	if err != nil {
-		return err
-	}
-
-	app.initServices()
+	app.InitServices(ctx)
 
 	logger.Info("Listen " + app.cfg.Server.Address)
 
 	return http.ListenAndServe(app.cfg.Server.Address, app.GetRoutes(ctx))
 }
 
-func (app *Application) initServices() {
+func (app *Application) InitServices(ctx context.Context) {
 	var err error
+	if app.db, err = postgres.NewDB(ctx, app.cfg.Database); err != nil {
+		panic(err)
+	}
+
 	if app.authService, err = auth.NewJwtEncoder(app.cfg.JWT); err != nil {
 		panic(err)
 	}
-	if app.passwordHasher, err = crypt.NewPasswordHasher(); err != nil {
-		panic(err)
-	}
+	app.passwordHasher = crypt.NewPasswordHasher()
 	if app.repo, err = postgres.NewRepository(app.db); err != nil {
 		panic(err)
 	}

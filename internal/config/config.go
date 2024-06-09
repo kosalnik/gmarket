@@ -2,10 +2,12 @@ package config
 
 import (
 	"embed"
+	"flag"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -49,8 +51,8 @@ type Logger struct {
 }
 
 func NewConfig() *Config {
-	v := viper.New()
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v := viper.NewWithOptions(viper.EnvKeyReplacer(&EnvKeyReplacer{}))
+	parseFlags(v)
 	v.SetConfigType("yaml")
 	v.AutomaticEnv()
 	defaultCfg, err := configDir.Open(cfgDefaultPath)
@@ -66,4 +68,43 @@ func NewConfig() *Config {
 	}
 
 	return &cfg
+}
+
+var flagsInitialized bool
+
+func parseFlags(v *viper.Viper) {
+	if flagsInitialized {
+		return
+	}
+	flagsInitialized = true
+	flag.String("a", ":8080", "server endpoint (ip:port)")
+	flag.String("r", "", "Accrual system address")
+	flag.String("d", "", "Database DSN")
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.Parse()
+	if err := v.BindPFlag("Server.Address", pflag.Lookup("a")); err != nil {
+		panic(err)
+	}
+	if err := v.BindPFlag("AccrualSystem.Address", pflag.Lookup("r")); err != nil {
+		panic(err)
+	}
+	if err := v.BindPFlag("Database.URI", pflag.Lookup("d")); err != nil {
+		panic(err)
+	}
+}
+
+type EnvKeyReplacer struct{}
+
+var _ viper.StringReplacer = &EnvKeyReplacer{}
+
+func (e *EnvKeyReplacer) Replace(key string) string {
+	switch key {
+	case "ACCRUALSYSTEM.ADDRESS":
+		return "ACCRUAL_SYSTEM_ADDRESS"
+	case "SERVER.ADDRESS":
+		return "RUN_ADDRESS"
+	case "DATABASE.URI":
+		return "DATABASE_URI"
+	}
+	return strings.Replace(key, ".", "_", -1)
 }

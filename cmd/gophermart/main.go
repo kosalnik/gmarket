@@ -10,7 +10,7 @@ import (
 
 func main() {
 	cfg := config.NewConfig()
-	parseFlags(cfg)
+
 	if err := logger.InitLogger(cfg.Logger); err != nil {
 		panic(err)
 	}
