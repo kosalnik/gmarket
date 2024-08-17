@@ -11,7 +11,7 @@ import (
 )
 
 type PasswordHasher interface {
-	Hash(pwd string) (string, error)
+	Hash(pwd string) string
 	IsEquals(pwd string, h string) bool
 }
 
@@ -28,18 +28,12 @@ func NewUserService(repo domain.Repository, h PasswordHasher) (*UserService, err
 }
 
 func (s *UserService) Register(ctx context.Context, login, password string) (*entity.User, error) {
-	pwdHash, err := s.hasher.Hash(password)
-	if err != nil {
-		return nil, err
-	}
+	pwdHash := s.hasher.Hash(password)
 	return s.repo.CreateUserWithAccount(ctx, login, pwdHash)
 }
 
 func (s *UserService) FindByLoginAndPassword(ctx context.Context, login, password string) (*entity.User, error) {
-	pwdHash, err := s.hasher.Hash(password)
-	if err != nil {
-		return nil, err
-	}
+	pwdHash := s.hasher.Hash(password)
 	return s.repo.FindUserByLoginAndPassword(ctx, login, pwdHash)
 }
 
