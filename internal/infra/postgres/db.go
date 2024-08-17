@@ -3,18 +3,12 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"sync"
 
 	"github.com/kosalnik/gmarket/internal/config"
 	"github.com/kosalnik/gmarket/internal/infra/logger"
 )
 
-type DB struct {
-	db *sql.DB
-	mu sync.Mutex
-}
-
-func NewDB(ctx context.Context, cfg config.Database) (*DB, error) {
+func NewDB(ctx context.Context, cfg config.Database) (*sql.DB, error) {
 	db, err := sql.Open("pgx", cfg.URI)
 	if err != nil {
 		return nil, err
@@ -25,5 +19,5 @@ func NewDB(ctx context.Context, cfg config.Database) (*DB, error) {
 		return nil, err
 	}
 
-	return &DB{db, sync.Mutex{}}, nil
+	return db, nil
 }
